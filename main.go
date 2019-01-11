@@ -42,8 +42,10 @@ func unzip(src, dest string, t transform.Transformer) error {
 		// in the ZIP file index after the file, so create
 		// any intermediate paths ahead of time
 		dir, _ := filepath.Split(path)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return err
+		if dir != "" {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return err
+			}
 		}
 
 		// item itself is a directory
