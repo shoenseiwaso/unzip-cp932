@@ -37,11 +37,22 @@ func unzip(src, dest string, t transform.Transformer) error {
 			fname = item.Name
 		}
 		path := filepath.Join(dest, fname)
+
+		// a directory this concrete file is in could be stored
+		// in the ZIP file index after the file, so create
+		// any intermediate paths ahead of time
+		dir, _ := filepath.Split(path)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
+
+		// item itself is a directory
 		if item.FileInfo().IsDir() {
 			if err := os.MkdirAll(path, 0755); err != nil {
 				return err
 			}
 		} else {
+			// otherwise, it's a concrete file
 			output, err := os.Create(path)
 			if err != nil {
 				return err
