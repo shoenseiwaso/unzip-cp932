@@ -24,7 +24,7 @@ func toUtf8(str string, t transform.Transformer) (string, error) {
 	return string(ret), err
 }
 
-func unzip(src, dest string, t transform.Transformer) error {
+func unzip(src, dest string, listOnly bool, t transform.Transformer) error {
 	zc, err := zip.OpenReader(src)
 	if err != nil {
 		return err
@@ -50,23 +50,29 @@ func unzip(src, dest string, t transform.Transformer) error {
 
 		// item itself is a directory
 		if item.FileInfo().IsDir() {
-			if err := os.MkdirAll(path, 0755); err != nil {
-				return err
+			log.Printf("Directory '%v'", path)
+			if !listOnly {
+				if err := os.MkdirAll(path, 0755); err != nil {
+					return err
+				}
 			}
 		} else {
 			// otherwise, it's a concrete file
-			output, err := os.Create(path)
-			if err != nil {
-				return err
-			}
-			defer output.Close()
-			fp, err := item.Open()
-			if err != nil {
-				return err
-			}
-			defer fp.Close()
-			if _, err := io.Copy(output, fp); err != nil {
-				return err
+			log.Printf("File '%v'", path)
+			if !listOnly {
+				output, err := os.Create(path)
+				if err != nil {
+					return err
+				}
+				defer output.Close()
+				fp, err := item.Open()
+				if err != nil {
+					return err
+				}
+				defer fp.Close()
+				if _, err := io.Copy(output, fp); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -76,10 +82,12 @@ func unzip(src, dest string, t transform.Transformer) error {
 
 func main() {
 	dest := "./"
+	listOnly := false
 	flag.StringVar(&dest, "d", dest, "destination folder")
+	flag.BoolVar(&listOnly, "l", listOnly, "just list the contents of the zip file")
 	flag.Parse()
 	fmt.Println("dest:", dest)
-	err := unzip(flag.Arg(0), dest, japanese.ShiftJIS.NewDecoder())
+	err := unzip(flag.Arg(0), dest, listOnly, japanese.ShiftJIS.NewDecoder())
 	if err != nil {
 		log.Fatal(err)
 	}
